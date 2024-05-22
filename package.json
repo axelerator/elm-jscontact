@@ -1,4 +1,10 @@
 {
+    "name": "jscontact",
+    "version": "1.0.0",
+    "description": "A type and conversion utils for JSContact cards (RFC 9553)",
+    "directories": {
+        "test": "tests"
+    },
     "scripts": {
         "format": "elm-format --yes src tests/Tests.elm",
         "test:docs": "elm make --docs=docs.json && rm docs.json",
