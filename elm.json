@@ -1,6 +1,6 @@
 {
     "type": "package",
-    "name": "axelerator/jscontact",
+    "name": "axelerator/elm-jscontact",
     "summary": "A type and conversion utils for JSContact cards (RFC 9553)",
     "license": "MIT",
     "version": "1.0.0",
