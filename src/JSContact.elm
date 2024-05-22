@@ -14,6 +14,7 @@ module JSContact exposing
 import Dict exposing (Dict)
 import Json.Decode exposing (Decoder, andThen, bool, dict, fail, field, int, list, string, succeed)
 import Json.Decode.Pipeline exposing (optional, required)
+import List exposing (isEmpty)
 import List.Extra exposing (unique)
 
 
@@ -403,7 +404,7 @@ trueMap label =
                         Dict.values d
                             |> unique
                 in
-                if unifiedValues == [ True ] then
+                if isEmpty unifiedValues || unifiedValues == [ True ] then
                     Dict.keys d
                         |> succeed
 

@@ -3,7 +3,9 @@ module Tests exposing (suite)
 import Dict
 import Expect
 import JSContact exposing (AddressComponentKind(..), JSContact, Kind(..), RelationType(..))
+import JSContact.Encoder exposing (encode)
 import Json.Decode exposing (decodeString)
+import Json.Encode
 import Test exposing (Test, describe, test)
 
 
@@ -12,6 +14,7 @@ suite =
     describe "JSContact"
         [ parseJSContact
         , missingData
+        , encoding
         ]
 
 
@@ -240,4 +243,26 @@ missingData =
             \_ -> Expect.err (decodeString JSContact.decoder <| missing "version")
         , test "fails to parse if uid field is missing" <|
             \_ -> Expect.err (decodeString JSContact.decoder <| missing "uid")
+        ]
+
+
+encoding : Test
+encoding =
+    describe "encoding & decoding results in the same result" <|
+        [ test "mininmal contact is encoded" <|
+            \_ ->
+                Expect.equal
+                    (Ok minimalContact)
+                    (encode minimalContact
+                        |> Json.Encode.encode 0
+                        |> Json.Decode.decodeString JSContact.decoder
+                    )
+        , test "full contact is encoded" <|
+            \_ ->
+                Expect.equal
+                    (Ok fullContact)
+                    (encode fullContact
+                        |> Json.Encode.encode 0
+                        |> Json.Decode.decodeString JSContact.decoder
+                    )
         ]
