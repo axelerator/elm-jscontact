@@ -6,9 +6,9 @@
         "test": "npx elm-review && elm-test-rs && npm run test:format && npm run test:docs",
         "postinstall": "elm-tooling install"
     },
-  "devDependencies": {
-    "elm-doc-preview": "^5.0.5",
-    "elm-review": "^2.11.2",
-    "elm-tooling": "^1.15.1"
-  }
+    "devDependencies": {
+        "elm-doc-preview": "^1.0.7",
+        "elm-review": "^2.11.2",
+        "elm-tooling": "^1.15.1"
+    }
 }
