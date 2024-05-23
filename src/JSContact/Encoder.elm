@@ -6,8 +6,10 @@ module JSContact.Encoder exposing (encode)
 
 -}
 
-import JSContact exposing (Address, AddressComponent, AddressComponentKind(..), Addresses, Email, Emails, JSContact, Kind(..), OnlineService, OnlineServices, Phone, Phones, PreferredLanguage, PreferredLanguages, RelatedTo, RelationType(..))
+import Dict exposing (Dict)
+import JSContact exposing (Address, AddressComponent, AddressComponentKind(..), Addresses, Email, Emails, JSContact, Kind(..), Name, NameComponent, NameComponentKind(..), OnlineService, OnlineServices, Phone, Phones, PreferredLanguage, PreferredLanguages, RelatedTo, RelationType(..))
 import Json.Encode exposing (Value, bool, dict, int, list, object, string)
+import List exposing (isEmpty)
 import Maybe exposing (map)
 import Maybe.Extra
 
@@ -25,14 +27,24 @@ encode contact =
         , ( "updated", map string contact.updated )
         , ( "language", map string contact.language )
         , ( "members", Just <| trueMap contact.members )
+        , ( "name", map encodeName contact.name )
         , ( "prodId", map string contact.prodId )
-        , ( "relatedTo", map encodeRelatedTo contact.relatedTo )
-        , ( "emails", map encodeEmails contact.emails )
-        , ( "addresses", map encodeAddresses contact.addresses )
-        , ( "phones", map encodePhones contact.phones )
-        , ( "onlineServices", map encodeOnlineServices contact.onlineServices )
-        , ( "preferredLanguages", map encodePreferredLanguages contact.preferredLanguages )
+        , ( "relatedTo", skipIfEmptyDict encodeRelatedTo contact.relatedTo )
+        , ( "emails", skipIfEmptyDict encodeEmails contact.emails )
+        , ( "addresses", skipIfEmptyDict encodeAddresses contact.addresses )
+        , ( "phones", skipIfEmptyDict encodePhones contact.phones )
+        , ( "onlineServices", skipIfEmptyDict encodeOnlineServices contact.onlineServices )
+        , ( "preferredLanguages", skipIfEmptyDict encodePreferredLanguages contact.preferredLanguages )
         ]
+
+
+skipIfEmptyDict : (Dict k v -> Value) -> Dict k v -> Maybe Value
+skipIfEmptyDict encoder dict =
+    if Dict.isEmpty dict then
+        Nothing
+
+    else
+        Just <| encoder dict
 
 
 encodeKind : Kind -> Value
@@ -239,7 +251,7 @@ encodeAddressComponentKind kind =
             StreetNumber ->
                 "number"
 
-            Name ->
+            AddressName ->
                 "name"
 
             Block ->
@@ -277,6 +289,75 @@ encodeAddressComponentKind kind =
 
             Other k ->
                 k
+
+
+encodeName : Name -> Value
+encodeName name =
+    withOptionals
+        [ ( "components", Just <| list encodeNameComponent name.components )
+        , ( "isOrdered", Just <| bool name.isOrdered )
+        , ( "defaultSeparator", map string name.defaultSeparator )
+        , ( "full", map string name.full )
+        , ( "sortAs"
+          , if isEmpty name.sortAs then
+                Nothing
+
+            else
+                Just <| encodeSortAs name.sortAs
+          )
+        , ( "phoneticScript", map string name.phoneticScript )
+        , ( "phoneticSystem", map string name.phoneticSystem )
+        ]
+
+
+encodeNameComponent : NameComponent -> Value
+encodeNameComponent c =
+    withOptionals
+        [ ( "value", Just <| string c.value )
+        , ( "kind", Just <| encodeNameComponentKind c.kind )
+        , ( "phonetic", map string c.phonetic )
+        ]
+
+
+encodeSortAs : List ( NameComponentKind, String ) -> Value
+encodeSortAs sortAs =
+    List.map (\( kind, value ) -> ( nameKindToString kind, string value )) sortAs
+        |> Dict.fromList
+        |> dict identity identity
+
+
+encodeNameComponentKind : NameComponentKind -> Value
+encodeNameComponentKind kind =
+    nameKindToString kind
+        |> string
+
+
+nameKindToString : NameComponentKind -> String
+nameKindToString kind =
+    case kind of
+        Title ->
+            "title"
+
+        Given ->
+            "given"
+
+        Given2 ->
+            "given2"
+
+        Surname ->
+            "surname"
+
+        Surname2 ->
+            "surname2"
+
+        Credential ->
+            "credential"
+
+        Generation ->
+            "generation"
+
+        NameComponentSeparator ->
+            "nameComponentSeparator"
 
 
 withOptionals : List ( String, Maybe Value ) -> Value

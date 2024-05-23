@@ -1,18 +1,18 @@
 module JSContact exposing
     ( decoder, JSContact
-    , Address, AddressComponent, AddressComponentKind(..), Addresses, Email, Emails, Kind(..), OnlineService, OnlineServices, Phone, Phones, PreferredLanguage, PreferredLanguages, RelatedTo, RelationType(..), UTCDateTime, Uid
+    , Address, AddressComponent, AddressComponentKind(..), Addresses, Email, Emails, Kind(..), OnlineService, OnlineServices, Phone, Phones, PreferredLanguage, PreferredLanguages, RelatedTo, RelationType(..), UTCDateTime, Uid, Name, NameComponent, NameComponentKind(..)
     )
 
 {-|
 
 @docs decoder, JSContact
 
-@docs Address, AddressComponent, AddressComponentKind, Addresses, Email, Emails, Kind, OnlineService, OnlineServices, Phone, Phones, PreferredLanguage, PreferredLanguages, RelatedTo, RelationType, UTCDateTime, Uid
+@docs Address, AddressComponent, AddressComponentKind, Addresses, Email, Emails, Kind, OnlineService, OnlineServices, Phone, Phones, PreferredLanguage, PreferredLanguages, RelatedTo, RelationType, UTCDateTime, Uid, Name, NameComponent, NameComponentKind
 
 -}
 
 import Dict exposing (Dict)
-import Json.Decode exposing (Decoder, andThen, bool, dict, fail, field, int, list, string, succeed)
+import Json.Decode exposing (Decoder, andThen, bool, dict, fail, field, int, list, map, string, succeed)
 import Json.Decode.Pipeline exposing (optional, required)
 import List exposing (isEmpty)
 import List.Extra exposing (unique)
@@ -27,14 +27,15 @@ type alias JSContact =
     , created : Maybe UTCDateTime
     , updated : Maybe UTCDateTime
     , language : Maybe String
+    , name : Maybe Name
     , members : List Uid
     , prodId : Maybe String
-    , relatedTo : Maybe RelatedTo
-    , emails : Maybe Emails
-    , addresses : Maybe Addresses
-    , phones : Maybe Phones
-    , onlineServices : Maybe OnlineServices
-    , preferredLanguages : Maybe PreferredLanguages
+    , relatedTo : RelatedTo
+    , emails : Emails
+    , addresses : Addresses
+    , phones : Phones
+    , onlineServices : OnlineServices
+    , preferredLanguages : PreferredLanguages
     }
 
 
@@ -53,17 +54,18 @@ decoder =
                         |> optional "kind" kindDecoder Individual
                         |> required "version" string
                         |> required "uid" string
-                        |> optional "created" (Json.Decode.map Just string) Nothing
-                        |> optional "updated" (Json.Decode.map Just string) Nothing
-                        |> optional "language" (Json.Decode.map Just string) Nothing
+                        |> optional "created" (map Just string) Nothing
+                        |> optional "updated" (map Just string) Nothing
+                        |> optional "language" (map Just string) Nothing
+                        |> optional "name" (map Just nameDecoder) Nothing
                         |> optional "members" members []
-                        |> optional "prodId" (Json.Decode.map Just string) Nothing
-                        |> optional "relatedTo" (Json.Decode.map Just relatedToDecoder) Nothing
-                        |> optional "emails" (Json.Decode.map Just emails) Nothing
-                        |> optional "addresses" (Json.Decode.map Just addresses) Nothing
-                        |> optional "phones" (Json.Decode.map Just phones) Nothing
-                        |> optional "onlineServices" (Json.Decode.map Just onlineServices) Nothing
-                        |> optional "preferredLanguages" (Json.Decode.map Just preferredLanguages) Nothing
+                        |> optional "prodId" (map Just string) Nothing
+                        |> optional "relatedTo" relatedToDecoder Dict.empty
+                        |> optional "emails" emails Dict.empty
+                        |> optional "addresses" addresses Dict.empty
+                        |> optional "phones" phones Dict.empty
+                        |> optional "onlineServices" onlineServices Dict.empty
+                        |> optional "preferredLanguages" preferredLanguages Dict.empty
             )
 
 
@@ -296,7 +298,7 @@ email =
     succeed Email
         |> optional "contexts" contexts_ []
         |> required "address" string
-        |> optional "pref" (Json.Decode.map Just int) Nothing
+        |> optional "pref" (map Just int) Nothing
 
 
 {-| The phone numbers by which to contact the entity represented by the Card
@@ -324,7 +326,7 @@ phone =
     succeed Phone
         |> optional "contexts" contexts_ []
         |> required "phone" string
-        |> optional "pref" (Json.Decode.map Just int) Nothing
+        |> optional "pref" (map Just int) Nothing
 
 
 {-| The online services in which to contact the entity represented by the Card
@@ -353,11 +355,11 @@ type alias OnlineService =
 onlineService : Decoder OnlineService
 onlineService =
     succeed OnlineService
-        |> optional "service" (Json.Decode.map Just string) Nothing
-        |> optional "user" (Json.Decode.map Just string) Nothing
+        |> optional "service" (map Just string) Nothing
+        |> optional "user" (map Just string) Nothing
         |> required "uri" string
         |> optional "contexts" contexts_ []
-        |> optional "pref" (Json.Decode.map Just int) Nothing
+        |> optional "pref" (map Just int) Nothing
 
 
 {-| The preferred languages for contacting the entity associated with the Card.
@@ -385,7 +387,7 @@ preferredLanguage =
     succeed PreferredLanguage
         |> required "language" string
         |> optional "contexts" contexts_ []
-        |> optional "pref" (Json.Decode.map Just int) Nothing
+        |> optional "pref" (map Just int) Nothing
 
 
 contexts_ : Decoder (List String)
@@ -458,14 +460,14 @@ address =
         |> optional "contexts" contexts_ []
         |> required "components" (list addressComponent)
         |> optional "isOrdered" bool False
-        |> optional "countryCode" (Json.Decode.map Just string) Nothing
-        |> optional "coordinates" (Json.Decode.map Just string) Nothing
-        |> optional "timeZone" (Json.Decode.map Just string) Nothing
-        |> optional "full" (Json.Decode.map Just string) Nothing
-        |> optional "defaultSeparator" (Json.Decode.map Just string) Nothing
-        |> optional "pref" (Json.Decode.map Just int) Nothing
-        |> optional "phoneticScript" (Json.Decode.map Just string) Nothing
-        |> optional "phoneticSystem" (Json.Decode.map Just string) Nothing
+        |> optional "countryCode" (map Just string) Nothing
+        |> optional "coordinates" (map Just string) Nothing
+        |> optional "timeZone" (map Just string) Nothing
+        |> optional "full" (map Just string) Nothing
+        |> optional "defaultSeparator" (map Just string) Nothing
+        |> optional "pref" (map Just int) Nothing
+        |> optional "phoneticScript" (map Just string) Nothing
+        |> optional "phoneticSystem" (map Just string) Nothing
 
 
 addressComponent : Decoder AddressComponent
@@ -473,7 +475,7 @@ addressComponent =
     succeed AddressComponent
         |> required "value" string
         |> required "kind" addressComponentKindDecoder
-        |> optional "phonetic" (Json.Decode.map Just string) Nothing
+        |> optional "phonetic" (map Just string) Nothing
 
 
 {-| The kind of the address component.
@@ -484,7 +486,7 @@ type AddressComponentKind
     | Floor
     | Building
     | StreetNumber
-    | Name
+    | AddressName
     | Block
     | Subdistrict
     | District
@@ -502,7 +504,7 @@ type AddressComponentKind
 addressComponentKindDecoder : Decoder AddressComponentKind
 addressComponentKindDecoder =
     string
-        |> Json.Decode.map
+        |> map
             (\k ->
                 case k of
                     "room" ->
@@ -521,7 +523,7 @@ addressComponentKindDecoder =
                         StreetNumber
 
                     "name" ->
-                        Name
+                        AddressName
 
                     "block" ->
                         Block
@@ -559,3 +561,131 @@ addressComponentKindDecoder =
                     _ ->
                         Other k
             )
+
+
+nameDecoder : Decoder Name
+nameDecoder =
+    succeed Name
+        |> optional "components" (list nameComponentDecoder) []
+        |> optional "isOrdered" bool False
+        |> optional "defaultSeparator" (map Just string) Nothing
+        |> optional "full" (map Just string) Nothing
+        |> optional "sortAs" sortAsDecoder []
+        |> optional "phoneticScript" (map Just string) Nothing
+        |> optional "phoneticSystem" (map Just string) Nothing
+
+
+{-| A Name object as defined in RFC 9553.
+-}
+type alias Name =
+    { components : List NameComponent
+    , isOrdered : Bool
+    , defaultSeparator : Maybe String
+    , full : Maybe String
+    , sortAs : List ( NameComponentKind, String )
+    , phoneticScript : Maybe String
+    , phoneticSystem : Maybe String
+    }
+
+
+sortAsDecoder : Decoder (List ( NameComponentKind, String ))
+sortAsDecoder =
+    dict string
+        |> andThen
+            (\kindToName ->
+                let
+                    folder : ( String, String ) -> ( List String, List ( NameComponentKind, String ) ) -> ( List String, List ( NameComponentKind, String ) )
+                    folder ( ks, n ) ( iv, v ) =
+                        case nameKindFromStr ks of
+                            Just r ->
+                                ( iv, ( r, n ) :: v )
+
+                            Nothing ->
+                                ( ks :: iv, v )
+
+                    ( invalid, valid ) =
+                        Dict.toList kindToName
+                            |> List.foldl folder ( [], [] )
+                in
+                if invalid == [] then
+                    succeed valid
+
+                else
+                    fail ("Unknown name component kinds: " ++ String.join ", " invalid)
+            )
+
+
+{-| A NameComponent object as defined in RFC 9553.
+-}
+type alias NameComponent =
+    { kind : NameComponentKind
+    , value : String
+    , phonetic : Maybe String
+    }
+
+
+nameComponentDecoder : Decoder NameComponent
+nameComponentDecoder =
+    succeed NameComponent
+        |> required "kind" nameKindDecoder
+        |> required "value" string
+        |> optional "phonetic" (map Just string) Nothing
+
+
+{-| The kind of the name component.
+-}
+type NameComponentKind
+    = Title
+    | Given
+    | Given2
+    | Surname
+    | Surname2
+    | Credential
+    | Generation
+    | NameComponentSeparator
+
+
+nameKindDecoder : Decoder NameComponentKind
+nameKindDecoder =
+    string
+        |> andThen
+            (\k ->
+                case nameKindFromStr k of
+                    Just n ->
+                        succeed n
+
+                    Nothing ->
+                        fail ("Unknown name component kind: " ++ k)
+            )
+
+
+nameKindFromStr : String -> Maybe NameComponentKind
+nameKindFromStr =
+    \k ->
+        case k of
+            "title" ->
+                Just Title
+
+            "given" ->
+                Just Given
+
+            "given2" ->
+                Just Given2
+
+            "surname" ->
+                Just Surname
+
+            "surname2" ->
+                Just Surname2
+
+            "credential" ->
+                Just Credential
+
+            "generation" ->
+                Just Generation
+
+            "separator" ->
+                Just NameComponentSeparator
+
+            _ ->
+                Nothing

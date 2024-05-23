@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.0.0] - 2024-05-22
+
+- added the (pretty important) [name component](https://datatracker.ietf.org/doc/html/rfc9553#name-name)
+- simplified some `Maybe (Dict ..)` types to be just an eventually empty `Dict`
+
 ## [1.1.0] - 2024-05-22
 
 Add `encoder`.

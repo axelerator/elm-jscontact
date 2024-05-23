@@ -2,7 +2,7 @@ module Tests exposing (suite)
 
 import Dict
 import Expect
-import JSContact exposing (AddressComponentKind(..), JSContact, Kind(..), RelationType(..))
+import JSContact exposing (AddressComponentKind(..), JSContact, Kind(..), NameComponentKind(..), RelationType(..))
 import JSContact.Encoder exposing (encode)
 import Json.Decode exposing (decodeString)
 import Json.Encode
@@ -35,14 +35,15 @@ minimalContact =
     , created = Nothing
     , updated = Nothing
     , language = Nothing
+    , name = Nothing
     , members = []
     , prodId = Nothing
-    , relatedTo = Nothing
-    , emails = Nothing
-    , addresses = Nothing
-    , phones = Nothing
-    , onlineServices = Nothing
-    , preferredLanguages = Nothing
+    , relatedTo = Dict.empty
+    , emails = Dict.empty
+    , addresses = Dict.empty
+    , phones = Dict.empty
+    , onlineServices = Dict.empty
+    , preferredLanguages = Dict.empty
     }
 
 
@@ -74,6 +75,18 @@ fullContactStr =
         "friend": true
       }
     }
+  },
+  "name": {
+    "components": [
+      { "kind": "given", "value": "Robert" },
+      { "kind": "given2", "value": "Pau" },
+      { "kind": "surname", "value": "Shou Chang" }
+    ],
+    "sortAs": {
+      "surname": "Pau Shou Chang",
+      "given": "Robert"
+    },
+    "isOrdered": true
   },
   "addresses": {
     "k23": {
@@ -155,24 +168,39 @@ fullContact =
         [ "urn:uuid:03a0e51f-d1aa-4385-8a53-e29025acd8af"
         , "urn:uuid:b8767877-b4a1-4c70-9acc-505d3819e519"
         ]
+    , name =
+        Just
+            { components =
+                [ { kind = Given, value = "Robert", phonetic = Nothing }
+                , { kind = Given2, value = "Pau", phonetic = Nothing }
+                , { kind = Surname, value = "Shou Chang", phonetic = Nothing }
+                ]
+            , sortAs =
+                [ ( Surname, "Pau Shou Chang" )
+                , ( Given, "Robert" )
+                ]
+            , isOrdered = True
+            , phoneticScript = Nothing
+            , phoneticSystem = Nothing
+            , defaultSeparator = Nothing
+            , full = Nothing
+            }
     , prodId = Just "Elm JSContact"
     , relatedTo =
         [ ( "urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6", [ Friend ] )
         ]
             |> Dict.fromList
-            |> Just
     , emails =
         [ ( "e1", { address = "jqpublic@xyz.example.com", contexts = [ "work" ], pref = Nothing } )
         , ( "e2", { address = "jane_doe@example.com", pref = Just 1, contexts = [] } )
         ]
             |> Dict.fromList
-            |> Just
     , addresses =
         [ ( "k23"
           , { components =
                 [ { kind = StreetNumber, value = "54321", phonetic = Nothing }
                 , { kind = Separator, value = " ", phonetic = Nothing }
-                , { kind = Name, value = "Oak St", phonetic = Nothing }
+                , { kind = AddressName, value = "Oak St", phonetic = Nothing }
                 , { kind = Locality, value = "Reston", phonetic = Nothing }
                 , { kind = Region, value = "VA", phonetic = Nothing }
                 , { kind = Separator, value = " ", phonetic = Nothing }
@@ -193,8 +221,7 @@ fullContact =
           )
         ]
             |> Dict.fromList
-            |> Just
-    , phones = Nothing
+    , phones = Dict.empty
     , onlineServices =
         [ ( "x1"
           , { service = Nothing
@@ -214,14 +241,12 @@ fullContact =
           )
         ]
             |> Dict.fromList
-            |> Just
     , preferredLanguages =
         [ ( "l1", { language = "en", pref = Just 1, contexts = [ "work" ] } )
         , ( "l2", { language = "fr", pref = Just 2, contexts = [ "work" ] } )
         , ( "l3", { language = "fr", pref = Nothing, contexts = [ "private" ] } )
         ]
             |> Dict.fromList
-            |> Just
     }
 
 
